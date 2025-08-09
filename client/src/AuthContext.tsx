@@ -28,7 +28,15 @@ export const AuthProvider = ({ children }: { children: any }) => {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch(`${API_URL}/me`, { credentials: 'include' });
+        // Try cookie-based session first
+        let res = await fetch(`${API_URL}/me`, { credentials: 'include' });
+        // Fallback to Authorization header if cookie is blocked and we have a non-httpOnly token
+        if (res.status === 401) {
+          const fallbackToken = getCookie('token');
+          if (fallbackToken) {
+            res = await fetch(`${API_URL}/me`, { headers: { Authorization: `Bearer ${fallbackToken}` } });
+          }
+        }
         if (res.ok) {
           const data = await res.json();
           setIsAuthenticated(true);
@@ -61,6 +69,8 @@ export const AuthProvider = ({ children }: { children: any }) => {
         setRestaurantId(data.restaurantId);
         // Persist restaurantId via cookie
         setCookie('restaurantId', data.restaurantId);
+        // Store fallback token (non-httpOnly) only if provided
+        if (data.token) setCookie('token', data.token);
         return true;
       } else {
         return data.error || 'Login failed.';

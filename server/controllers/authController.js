@@ -70,7 +70,8 @@ exports.login = async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000,
     });
 
-    return res.json({ restaurantSlug: user.restaurantSlug, restaurantId: user.restaurantId });
+    // Also include token in body so SPA can use Authorization fallback when third-party cookies are blocked
+    return res.json({ restaurantSlug: user.restaurantSlug, restaurantId: user.restaurantId, token });
   } catch (err) {
     console.error('Login error:', err);
     return res.status(500).json({ error: 'Server error.' });
@@ -79,7 +80,14 @@ exports.login = async (req, res) => {
 
 exports.me = async (req, res) => {
   try {
-    const token = req.cookies?.token;
+    // Prefer cookie, but support Authorization: Bearer <token> fallback
+    let token = req.cookies?.token;
+    if (!token) {
+      const auth = req.headers.authorization;
+      if (auth && auth.startsWith('Bearer ')) {
+        token = auth.split(' ')[1];
+      }
+    }
     if (!token) return res.status(401).json({ error: 'Not authenticated' });
     const decoded = jwt.verify(token, JWT_SECRET);
     return res.json({
