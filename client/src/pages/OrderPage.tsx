@@ -326,7 +326,7 @@ function OrderPage() {
       </div>
 
       {/* Menu Grid - Responsive */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 px-4 sm:px-6 lg:px-8 mb-20 sm:mb-24">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 lg:gap-8 px-2 sm:px-4 lg:px-6 mb-20 sm:mb-24">
         {filteredMenu.map(item => {
             // Tag icons based on name/category
             const tags: string[] = [];
@@ -339,9 +339,9 @@ function OrderPage() {
             const avgRating = averageRatings[item._id] || 0;
             const isAnimating = !!cartAnimation[item._id];
             return (
-              <div
-                key={item._id}
-                className="relative flex flex-col items-center justify-between p-4 sm:p-5 rounded-2xl sm:rounded-3xl shadow-lg sm:shadow-2xl border border-white/60 bg-white/80 backdrop-blur-xl overflow-hidden min-h-[320px] sm:min-h-[380px] max-w-sm mx-auto hover:shadow-xl transition-all duration-300"
+                <div
+                  key={item._id}
+                  className="relative flex flex-col items-center justify-between p-4 sm:p-5 rounded-2xl sm:rounded-3xl shadow-lg sm:shadow-2xl border border-white/60 bg-white/80 backdrop-blur-xl overflow-hidden min-h-[320px] sm:min-h-[380px] w-full hover:shadow-xl transition-all duration-300"
                 style={{ boxShadow: '0 4px 20px 0 rgba(31,38,135,0.12)', border: '1.5px solid rgba(255,255,255,0.5)' }}
               >
                 {/* Confetti animation overlay */}
