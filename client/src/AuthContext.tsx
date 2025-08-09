@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getCookie, setCookie, removeCookie } from './utils/cookies';
+import apiClient from './utils/api-client';
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -28,17 +29,10 @@ export const AuthProvider = ({ children }: { children: any }) => {
   useEffect(() => {
     (async () => {
       try {
-        // Try cookie-based session first
-        let res = await fetch(`${API_URL}/me`, { credentials: 'include' });
-        // Fallback to Authorization header if cookie is blocked and we have a non-httpOnly token
-        if (res.status === 401) {
-          const fallbackToken = getCookie('token');
-          if (fallbackToken) {
-            res = await fetch(`${API_URL}/me`, { headers: { Authorization: `Bearer ${fallbackToken}` } });
-          }
-        }
-        if (res.ok) {
-          const data = await res.json();
+        // Use axios client which already sends credentials and Authorization from cookie token
+        const res = await apiClient.get(`/api/auth/me`).catch((e) => e?.response);
+        if (res && res.status === 200) {
+          const data = res.data;
           setIsAuthenticated(true);
           if (data?.restaurantId) {
             setRestaurantId(data.restaurantId);
