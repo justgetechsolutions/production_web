@@ -20,16 +20,31 @@ const API_URL = API_BASE + '/api/auth';
 
 export const AuthProvider = ({ children }: { children: any }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isReady, setIsReady] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   // Remove restaurantSlug state, only keep restaurantId
   const [restaurantId, setRestaurantId] = useState<string | null>(null);
 
   useEffect(() => {
-    const storedToken = getCookie('token');
-    const storedId = getCookie('restaurantId');
-    setToken(storedToken);
-    setRestaurantId(storedId);
-    setIsAuthenticated(!!storedToken);
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/me`, { credentials: 'include' });
+        if (res.ok) {
+          const data = await res.json();
+          setIsAuthenticated(true);
+          if (data?.restaurantId) {
+            setRestaurantId(data.restaurantId);
+            setCookie('restaurantId', data.restaurantId);
+          }
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch {
+        setIsAuthenticated(false);
+      } finally {
+        setIsReady(true);
+      }
+    })();
   }, []);
 
   const login = async (email: string, password: string): Promise<boolean | string> => {
@@ -81,7 +96,7 @@ export const AuthProvider = ({ children }: { children: any }) => {
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, token, restaurantId, login, logout, register }}>
-      {children}
+      {isReady ? children : null}
     </AuthContext.Provider>
   );
 };

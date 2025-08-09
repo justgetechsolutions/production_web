@@ -76,3 +76,23 @@ exports.login = async (req, res) => {
     return res.status(500).json({ error: 'Server error.' });
   }
 };
+
+exports.me = async (req, res) => {
+  try {
+    const token = req.cookies?.token;
+    if (!token) return res.status(401).json({ error: 'Not authenticated' });
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return res.json({
+      userId: decoded.userId,
+      restaurantId: decoded.restaurantId,
+      restaurantSlug: decoded.restaurantSlug,
+    });
+  } catch (e) {
+    return res.status(401).json({ error: 'Invalid session' });
+  }
+};
+
+exports.logout = async (_req, res) => {
+  res.clearCookie('token', { path: '/' });
+  return res.json({ ok: true });
+};
