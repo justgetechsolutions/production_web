@@ -2,6 +2,18 @@ const Table = require('../models/Table');
 const Order = require('../models/Order');
 const QRCode = require('qrcode');
 
+function resolveFrontendUrl() {
+  // Primary: explicit env
+  if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL;
+  // Secondary: first allowed origin from ALLOWED_ORIGINS
+  if (process.env.ALLOWED_ORIGINS) {
+    const first = process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)[0];
+    if (first) return first;
+  }
+  // Fallback: known deployed frontend
+  return 'https://production-web-kappa.vercel.app';
+}
+
 exports.getTables = async (req, res) => {
   try {
     const tables = await Table.find({ restaurantId: req.restaurantId })
@@ -17,10 +29,7 @@ exports.createTable = async (req, res) => {
   try {
     const { tableNumber } = req.body;
     // Use frontend URL instead of server URL for QR codes
-    const frontendUrl = process.env.FRONTEND_URL;
-    if (!frontendUrl) {
-      return res.status(500).json({ error: 'FRONTEND_URL is not configured on the server' });
-    }
+    const frontendUrl = resolveFrontendUrl();
     const qrUrl = `${frontendUrl}/r/${req.restaurantId}/menu/${tableNumber}`;
     const table = await Table.create({ 
       restaurantId: req.restaurantId, 
@@ -79,14 +88,18 @@ exports.getTableQR = async (req, res) => {
     if (!table) return res.status(404).json({ error: 'Table not found' });
     
     // Use frontend URL instead of server URL for QR codes
-    const frontendUrl = process.env.FRONTEND_URL;
-    if (!frontendUrl) {
-      return res.status(500).json({ error: 'FRONTEND_URL is not configured on the server' });
-    }
+    const frontendUrl = resolveFrontendUrl();
     
-    // Update QR URL if it's using the old format
+    // Update QR URL if it's using an old or local format
     let updatedQrUrl = table.qrUrl;
-    if (table.qrUrl.includes('/r/admin/menu/') || table.qrUrl.includes('/r/undefined/menu/') || table.qrUrl.includes('localhost:5000')) {
+    if (
+      table.qrUrl.includes('/r/admin/menu/') ||
+      table.qrUrl.includes('/r/undefined/menu/') ||
+      table.qrUrl.includes('localhost:5000') ||
+      table.qrUrl.includes('localhost:3000') ||
+      table.qrUrl.includes('http://localhost:') ||
+      table.qrUrl.includes('onrender.com')
+    ) {
       updatedQrUrl = `${frontendUrl}/r/${req.restaurantId}/menu/${table.tableNumber}`;
       await Table.findByIdAndUpdate(table._id, { qrUrl: updatedQrUrl });
     }
@@ -164,13 +177,17 @@ exports.updateAllTableQRs = async (req, res) => {
     let updatedCount = 0;
     
     // Use frontend URL instead of server URL for QR codes
-    const frontendUrl = process.env.FRONTEND_URL;
-    if (!frontendUrl) {
-      return res.status(500).json({ error: 'FRONTEND_URL is not configured on the server' });
-    }
+    const frontendUrl = resolveFrontendUrl();
     
     for (const table of tables) {
-      if (table.qrUrl.includes('/r/admin/menu/') || table.qrUrl.includes('/r/undefined/menu/') || table.qrUrl.includes('localhost:5000')) {
+      if (
+        table.qrUrl.includes('/r/admin/menu/') ||
+        table.qrUrl.includes('/r/undefined/menu/') ||
+        table.qrUrl.includes('localhost:5000') ||
+        table.qrUrl.includes('localhost:3000') ||
+        table.qrUrl.includes('http://localhost:') ||
+        table.qrUrl.includes('onrender.com')
+      ) {
         const newQrUrl = `${frontendUrl}/r/${req.restaurantId}/menu/${table.tableNumber}`;
         await Table.findByIdAndUpdate(table._id, { qrUrl: newQrUrl });
         updatedCount++;
