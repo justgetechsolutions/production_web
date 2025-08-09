@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import QRCode from 'qrcode';
 import { useAuth } from '../../AuthContext.tsx';
 import apiClient from '../../utils/apiClient.ts';
 
@@ -18,8 +17,6 @@ function TableList() {
   const [tableNumber, setTableNumber] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-
-  const API_URL = restaurantId ? `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/restaurants/${restaurantId}/tables` : '';
 
   const fetchTables = async () => {
     if (!restaurantId) return;
@@ -81,17 +78,21 @@ function TableList() {
     }
   };
 
-  const handleDownloadQR = async (tableNumber: string) => {
-    if (!restaurantId) {
-      alert('No restaurantId found.');
+  const handleDownloadQR = async (table: Table) => {
+    if (!restaurantId || !table._id) {
+      alert('Missing identifiers to download QR.');
       return;
     }
-    const url = `${window.location.origin}/r/${restaurantId}/menu/${encodeURIComponent(tableNumber)}`;
-    const qrDataUrl = await QRCode.toDataURL(url, { width: 300 });
-    const link = document.createElement('a');
-    link.href = qrDataUrl;
-    link.download = `table-${tableNumber}-qr.png`;
-    link.click();
+    try {
+      const { data } = await apiClient.get(`/api/restaurants/${restaurantId}/tables/${table._id}/qr`);
+      const link = document.createElement('a');
+      link.href = data.qrImage;
+      link.download = `table-${table.tableNumber}-qr.png`;
+      link.click();
+    } catch (error) {
+      console.error('Error downloading QR:', error);
+      alert('Failed to download QR code');
+    }
   };
 
   if (loading) return <div>Loading tables...</div>;
@@ -117,7 +118,7 @@ function TableList() {
               <td className="py-2 font-semibold">{table.tableNumber}</td>
               <td>
                 <button
-                  onClick={() => handleDownloadQR(table.tableNumber)}
+                  onClick={() => handleDownloadQR(table)}
                   className="text-blue-600 hover:underline text-sm"
                 >
                   Download QR

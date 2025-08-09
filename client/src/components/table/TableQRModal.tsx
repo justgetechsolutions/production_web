@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Download, QrCode } from 'lucide-react';
 import { useAuth } from '../../AuthContext.tsx';
 import apiClient from '../../utils/apiClient.ts';
@@ -16,12 +16,37 @@ interface TableQRModalProps {
 
 const TableQRModal: React.FC<TableQRModalProps> = ({ table, onClose }) => {
   const { restaurantId } = useAuth();
+  const [qrUrl, setQrUrl] = useState<string>(table.qrUrl);
+  const [qrImage, setQrImage] = useState<string | null>(null);
+
+  // Fetch server-generated QR (which also repairs old localhost URLs)
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const { data } = await apiClient.get(`/api/restaurants/${restaurantId}/tables/${table._id}/qr`);
+        if (!mounted) return;
+        if (data?.qrUrl) setQrUrl(data.qrUrl);
+        if (data?.qrImage) setQrImage(data.qrImage);
+      } catch (_) {
+        // keep fallback values if request fails
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, [restaurantId, table._id]);
 
   const handleDownloadQR = async () => {
     try {
-      const response = await apiClient.get(`/api/restaurants/${restaurantId}/tables/${table._id}/qr`);
+      // Prefer already-fetched qrImage; if absent, fetch once
+      let data = { qrImage } as any;
+      if (!data.qrImage) {
+        const resp = await apiClient.get(`/api/restaurants/${restaurantId}/tables/${table._id}/qr`);
+        data = resp.data;
+      }
       const link = document.createElement('a');
-      link.href = response.data.qrImage;
+      link.href = data.qrImage;
       link.download = `table-${table.tableNumber}-qr.png`;
       link.click();
     } catch (error) {
@@ -52,18 +77,22 @@ const TableQRModal: React.FC<TableQRModalProps> = ({ table, onClose }) => {
           <div className="mb-4">
             <p className="text-gray-600 mb-2">Scan this QR code to access the menu for Table {table.tableNumber}</p>
             <div className="bg-gray-100 p-4 rounded-lg inline-block">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(table.qrUrl)}`}
-                alt={`QR Code for Table ${table.tableNumber}`}
-                className="w-48 h-48"
-              />
+              {qrImage ? (
+                <img src={qrImage} alt={`QR Code for Table ${table.tableNumber}`} className="w-48 h-48" />
+              ) : (
+                <img
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`}
+                  alt={`QR Code for Table ${table.tableNumber}`}
+                  className="w-48 h-48"
+                />
+              )}
             </div>
           </div>
 
           <div className="mb-4">
             <p className="text-sm text-gray-500 mb-2">QR Code URL:</p>
             <p className="text-xs text-gray-600 break-all bg-gray-50 p-2 rounded">
-              {table.qrUrl}
+              {qrUrl}
             </p>
           </div>
 

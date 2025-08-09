@@ -3,14 +3,44 @@ const Order = require('../models/Order');
 const QRCode = require('qrcode');
 
 function resolveFrontendUrl() {
-  // Primary: explicit env
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // 1) Explicit primary env var always wins
   if (process.env.FRONTEND_URL) return process.env.FRONTEND_URL;
-  // Secondary: first allowed origin from ALLOWED_ORIGINS
+
+  // 2) Try to infer from ALLOWED_ORIGINS with sensible filtering
   if (process.env.ALLOWED_ORIGINS) {
-    const first = process.env.ALLOWED_ORIGINS.split(',').map(s => s.trim()).filter(Boolean)[0];
-    if (first) return first;
+    const candidates = process.env.ALLOWED_ORIGINS
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    // Helper predicates
+    const isLocal = (u) => /localhost|127\.0\.0\.1/i.test(u);
+    const isHttp = (u) => /^http:\/\//i.test(u);
+
+    if (isProduction) {
+      // Prefer first non-local, preferably https
+      const httpsNonLocal = candidates.find((u) => !isLocal(u) && !isHttp(u));
+      if (httpsNonLocal) return httpsNonLocal;
+      const anyNonLocal = candidates.find((u) => !isLocal(u));
+      if (anyNonLocal) return anyNonLocal;
+    } else {
+      // Development: prefer localhost if present
+      const local = candidates.find((u) => isLocal(u));
+      if (local) return local;
+    }
+
+    // Fallback to first candidate if nothing matched
+    if (candidates.length > 0) return candidates[0];
   }
-  // Fallback: known deployed frontend
+
+  // 3) Sensible defaults
+  if (!isProduction) {
+    return process.env.FRONTEND_URL_DEV || 'http://localhost:3000';
+  }
+
+  // Fallback: known deployed frontend (replace with your production domain if available)
   return 'https://production-web-kappa.vercel.app';
 }
 
