@@ -32,20 +32,27 @@ const app = express();
 // Behind a reverse proxy (Render/Vercel/etc.) to ensure correct secure cookie behavior
 app.set('trust proxy', 1);
 
-// Derive allowed origins from env for production safety
+// Derive allowed origins from env for production safety and include sane defaults
 const rawAllowed = process.env.ALLOWED_ORIGINS || process.env.FRONTEND_URL || '';
-const allowedOrigins = rawAllowed
-  .split(',')
-  .map(s => s.trim())
-  .filter(Boolean);
+const allowedOrigins = [
+  // explicit env-configured
+  ...rawAllowed.split(',').map(s => s.trim()).filter(Boolean),
+  // local dev
+  'http://localhost:3000',
+  // your deployed frontend
+  'https://production-web-kappa.vercel.app',
+];
 
 const corsOrigin = function(origin, callback) {
-  // Allow same-origin, server-to-server, and mobile apps without origin
+  // Allow requests without Origin (server-server, curl)
   if (!origin) return callback(null, true);
-  // If no list configured, allow all (not recommended for production)
-  if (allowedOrigins.length === 0) return callback(null, true);
-  // Check against allowlist
+  // Direct match against allowlist
   if (allowedOrigins.includes(origin)) return callback(null, true);
+  // Allow all vercel.app subdomains if needed
+  try {
+    const { hostname } = new URL(origin);
+    if (hostname.endsWith('.vercel.app')) return callback(null, true);
+  } catch (_) {}
   return callback(new Error('Not allowed by CORS'));
 };
 
@@ -53,10 +60,18 @@ const corsOrigin = function(origin, callback) {
 app.use(cors({
   origin: corsOrigin,
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
   optionsSuccessStatus: 204,
 }));
 // Handle preflight across all routes (Express 5 + path-to-regexp v6: avoid bare '*')
-app.options(/.*/, cors({ origin: corsOrigin, credentials: true, optionsSuccessStatus: 204 }));
+app.options(/.*/, cors({
+  origin: corsOrigin,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 204,
+}));
 
 // Security & performance middleware
 app.use(helmet({
