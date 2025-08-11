@@ -40,6 +40,7 @@ const allowedOrigins = [
   // local dev
   'http://localhost:3000',
   // your deployed frontend
+  'https://jury-within-singer-cabinets.trycloudflare.com',
   'https://production-web-kappa.vercel.app',
 ];
 
