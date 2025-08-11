@@ -39,9 +39,10 @@ const allowedOrigins = [
   ...rawAllowed.split(',').map(s => s.trim()).filter(Boolean),
   // local dev
   'http://localhost:3000',
-  // your deployed frontend
-  'https://jury-within-singer-cabinets.trycloudflare.com',
+  // production frontend
   'https://production-web-kappa.vercel.app',
+  // production backend (for server-to-server communication)
+  'https://production-web-l3pb.onrender.com',
 ];
 
 const corsOrigin = function(origin, callback) {
