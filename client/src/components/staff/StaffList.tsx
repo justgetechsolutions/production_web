@@ -15,7 +15,7 @@ interface Staff {
 
 function StaffList() {
   const { restaurantSlug, token } = useAuth();
-  const API_URL = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/staff/`;
+  const API_URL = `${import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com'}/api/staff/`;
   const [staff, setStaff] = useState<Staff[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [editStaff, setEditStaff] = useState<Staff | null>(null);

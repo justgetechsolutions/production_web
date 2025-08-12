@@ -28,7 +28,7 @@ const AdminMenu = () => {
     if (!restaurantId) return;
     setLoading(true);
     try {
-      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/restaurants/${restaurantId}/menu`, { withCredentials: true });
+      const res = await axios.get(`${import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com'}/api/restaurants/${restaurantId}/menu`, { withCredentials: true });
       setMenuItems(res.data);
       setError('');
     } catch (err) {
@@ -43,7 +43,7 @@ const AdminMenu = () => {
     if (!restaurantId) return;
     try {
       const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/restaurants/${restaurantId}/menu`,
+        `${import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com'}/api/restaurants/${restaurantId}/menu`,
         { ...newItem, price: Number(newItem.price) },
         { withCredentials: true }
       );
@@ -58,7 +58,7 @@ const AdminMenu = () => {
     if (!restaurantId) return;
     try {
       await axios.delete(
-        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/restaurants/${restaurantId}/menu/${id}`,
+        `${import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com'}/api/restaurants/${restaurantId}/menu/${id}`,
         { withCredentials: true }
       );
       setMenuItems(prev => prev.filter(item => item._id !== id));
@@ -71,7 +71,7 @@ const AdminMenu = () => {
     if (!restaurantId) return;
     try {
       const res = await axios.put(
-        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/restaurants/${restaurantId}/menu/${id}`,
+        `${import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com'}/api/restaurants/${restaurantId}/menu/${id}`,
         updatedItem,
         { withCredentials: true }
       );
@@ -93,7 +93,7 @@ const AdminMenu = () => {
     formData.append('image', file);
     try {
       const res = await axios.post(
-        `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/restaurants/${restaurantId}/menu/upload`,
+        `${import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com'}/api/restaurants/${restaurantId}/menu/upload`,
         formData,
         { withCredentials: true, headers: { 'Content-Type': 'multipart/form-data' } }
       );

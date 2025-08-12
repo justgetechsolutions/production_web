@@ -337,7 +337,7 @@ function OrderList() {
 
     let socket: Socket | null = null;
     if (restaurantId) {
-      socket = io(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000', {
+      socket = io(import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com', {
         withCredentials: true,
         transports: ['websocket', 'polling']
       });

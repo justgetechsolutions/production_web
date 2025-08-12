@@ -3,7 +3,8 @@
 import axios from 'axios';
 import { getCookie, removeCookie } from './cookies';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://justgetech-website-s9mt.onrender.com';
+// Use environment variable or default to production URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com';
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

@@ -93,7 +93,7 @@ const KitchenDashboard: React.FC = () => {
   const setupSocket = () => {
     const raw = document.cookie.includes('kitchenStaff') ? decodeURIComponent((document.cookie.split('; ').find(row => row.startsWith('kitchenStaff=')) || '').split('=')[1] || '{}') : '{}';
     const staffData = JSON.parse(raw || '{}');
-    const newSocket = io(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000');
+    const newSocket = io(import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com');
     
     newSocket.on('connect', () => {
       console.log('Connected to kitchen socket');
@@ -138,7 +138,7 @@ const KitchenDashboard: React.FC = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/kitchen/orders`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com'}/api/kitchen/orders`, {
         credentials: 'include'
       });
       
@@ -158,7 +158,7 @@ const KitchenDashboard: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/kitchen/stats`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com'}/api/kitchen/stats`, {
         credentials: 'include'
       });
       
@@ -173,7 +173,7 @@ const KitchenDashboard: React.FC = () => {
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/kitchen/orders/${orderId}/status`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com'}/api/kitchen/orders/${orderId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -28,8 +28,8 @@ interface Category {
   name: string;
 }
 
-const MENU_API = `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/menu`;
-const ORDER_API =`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/orders`;
+const MENU_API = `${import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com'}/api/menu`;
+const ORDER_API =`${import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com'}/api/orders`;
 const FALLBACK_IMG = 'https://via.placeholder.com/120?text=No+Image';
 
 // Utility: Map category or name to icon
@@ -84,7 +84,7 @@ function OrderPage() {
 
   useEffect(() => {
     if (!restaurantId) return;
-    fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/restaurants/menu/public/${restaurantId}`)
+    fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com'}/api/restaurants/menu/public/${restaurantId}`)
       .then(res => res.json())
       .then(data => {
         setMenu(data);
@@ -187,7 +187,7 @@ function OrderPage() {
       price: ci.menuItem.price
     }));
     const res = await fetch(
-      `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/orders/public/${restaurantId}`,
+      `${import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com'}/api/orders/public/${restaurantId}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

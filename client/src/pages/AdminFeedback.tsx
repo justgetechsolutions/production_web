@@ -31,7 +31,7 @@ const AdminFeedback: React.FC = () => {
       setLoading(true);
       try {
         const res = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/feedback`,
+          `${import.meta.env.VITE_API_BASE_URL || "https://production-web-l3pb.onrender.com"}/api/feedback`,
           { credentials: "include" }
         );
         const data = await res.json();

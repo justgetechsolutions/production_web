@@ -43,7 +43,7 @@ const AdminCategories: React.FC = () => {
     await dispatch(placeCounterOrder({ restaurantId, tableNumber: 'Cash Counter', items: cart.map(c => ({ id: c.id, qty: c.qty })), discount }));
     // Emit a client-side hint; server will broadcast on order creation too
     try {
-      const socket = io(import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000', { transports: ['websocket', 'polling'] });
+      const socket = io(import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com', { transports: ['websocket', 'polling'] });
       socket.emit('joinRestaurant', restaurantId);
       socket.emit('newOrder', { restaurantId });
       socket.disconnect();

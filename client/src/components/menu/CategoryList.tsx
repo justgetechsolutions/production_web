@@ -18,7 +18,7 @@ function CategoryList({ onCategorySelect, selectedCategory }: CategoryListProps)
       return;
     }
     // Fetch menu items and extract unique categories
-    fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/restaurants/${restaurantId}/menu`, { credentials: 'include' })
+    fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com'}/api/restaurants/${restaurantId}/menu`, { credentials: 'include' })
       .then(res => res.json())
       .then((data: any[]) => {
         const uniqueCategories = Array.from(new Set(data.map((item: any) => item.category).filter(Boolean)));

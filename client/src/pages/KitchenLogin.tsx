@@ -17,7 +17,7 @@ const KitchenLogin: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}/api/staff-auth/login`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com'}/api/staff-auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

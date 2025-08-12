@@ -63,7 +63,7 @@ const OrderStatusPage = () => {
       
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/orders/${orderId}`
+          `${import.meta.env.VITE_API_BASE_URL || "https://production-web-l3pb.onrender.com"}/api/orders/${orderId}`
         );
         if (response.ok) {
           const orderData = await response.json();
@@ -108,7 +108,7 @@ const OrderStatusPage = () => {
     setFeedbackError("");
     try {
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL || "http://localhost:5000"}/api/feedback`,
+        `${import.meta.env.VITE_API_BASE_URL || "https://production-web-l3pb.onrender.com"}/api/feedback`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
