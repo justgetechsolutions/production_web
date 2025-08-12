@@ -3,8 +3,21 @@
 import axios from 'axios';
 import { getCookie, removeCookie } from './cookies';
 
-// Use environment variable or default to production URL
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com';
+// Determine API base URL based on environment
+const API_BASE_URL = (() => {
+  // Check if we're in development mode
+  if (import.meta.env.DEV) {
+    return 'http://localhost:5000';
+  }
+  
+  // Check if environment variable is set
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // Default to production URL
+  return 'https://production-web-l3pb.onrender.com';
+})();
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

@@ -16,7 +16,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // rely on Vite's built-in ImportMetaEnv typing; do not redeclare
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://demo-product-m47a.onrender.com';
+const API_BASE = (() => {
+  // Check if we're in development mode
+  if (import.meta.env.DEV) {
+    return 'http://localhost:5000';
+  }
+  
+  // Check if environment variable is set
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // Default to production URL
+  return 'https://production-web-l3pb.onrender.com';
+})();
 const API_URL = API_BASE + '/api/auth';
 
 export const AuthProvider = ({ children }: { children: any }) => {
