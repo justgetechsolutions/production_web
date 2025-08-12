@@ -343,41 +343,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ restaurantId, onAddToCart, cart = [] 
                 </button>
               </div>
               
-              {/* Quick Suggestions */}
-              <div className="mt-3 flex flex-wrap gap-2">
-                {[
-                  'What\'s good for kids?', 
-                  'Show me spicy items', 
-                  'Best sellers',
-                  'Order Paneer Tikka',
-                  'Add cold drinks',
-                  cart.length > 0 ? 'Show my cart' : 'View cart'
-                ].map((suggestion) => (
-                  <button
-                    key={suggestion}
-                    onClick={() => {
-                      if (suggestion.includes('cart')) {
-                        setInputValue(suggestion);
-                        setTimeout(() => {
-                          const userMessage: Message = {
-                            id: Date.now().toString(),
-                            text: suggestion,
-                            isUser: true,
-                            timestamp: new Date()
-                          };
-                          setMessages(prev => [...prev, userMessage]);
-                          handleCartQuery();
-                        }, 100);
-                      } else {
-                        setInputValue(suggestion);
-                      }
-                    }}
-                    className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-full hover:bg-gray-200 transition-colors"
-                  >
-                    {suggestion}
-                  </button>
-                ))}
-              </div>
+              {/* Quick Suggestions - Removed all default questions */}
             </div>
           </div>
         </div>
