@@ -30,7 +30,8 @@ export const SocketProvider: React.FC<SocketProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Create socket connection
-         const newSocket = io('http://localhost:5000', {
+    const backendUrl = import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com';
+    const newSocket = io(backendUrl, {
       withCredentials: true,
       transports: ['websocket', 'polling']
     });

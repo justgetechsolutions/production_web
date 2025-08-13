@@ -104,7 +104,7 @@ const KitchenDashboard: React.FC = () => {
     restaurantId: staffInfo?.restaurantId || '',
     enableSound: enableSound,
     onNewOrder: (orderData) => {
-      console.log('New order received in kitchen:', orderData);
+      console.log('🎉 New order received in kitchen:', orderData);
       // Show notification
       setNewOrderData(orderData);
       setShowNewOrderNotification(true);
@@ -118,7 +118,7 @@ const KitchenDashboard: React.FC = () => {
       fetchStats(); // Refresh stats
     },
     onOrderStatusUpdate: (orderData) => {
-      console.log('Order status updated in kitchen:', orderData);
+      console.log('🔄 Order status updated in kitchen:', orderData);
       fetchOrders(); // Refresh orders
       fetchStats(); // Refresh stats
     }
@@ -138,6 +138,13 @@ const KitchenDashboard: React.FC = () => {
   useEffect(() => {
     console.log('Kitchen dashboard: Socket connection status:', isConnected);
   }, [isConnected]);
+
+  // Only initialize real-time orders when staffInfo is available
+  useEffect(() => {
+    if (staffInfo?.restaurantId && isConnected) {
+      console.log('Kitchen dashboard: Initializing real-time orders for restaurant:', staffInfo.restaurantId);
+    }
+  }, [staffInfo?.restaurantId, isConnected]);
 
 
 
@@ -270,6 +277,13 @@ const KitchenDashboard: React.FC = () => {
       {/* Audio for notifications */}
       <audio ref={audioRef} src="/notification.mp3" preload="auto" />
       
+      {/* New Order Notification */}
+      <NewOrderNotification
+        isVisible={showNewOrderNotification}
+        orderData={newOrderData}
+        onClose={() => setShowNewOrderNotification(false)}
+      />
+      
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -324,6 +338,21 @@ const KitchenDashboard: React.FC = () => {
                 title="Test notification sound (unlocks audio)"
               >
                 🔊 Test Sound
+              </button>
+              
+              <button
+                onClick={() => {
+                  console.log('🔍 Debug Info:');
+                  console.log('- Staff Info:', staffInfo);
+                  console.log('- Restaurant ID:', staffInfo?.restaurantId);
+                  console.log('- Socket Connected:', isConnected);
+                  console.log('- Orders Count:', orders.length);
+                  toast.info('Check console for debug info');
+                }}
+                className="flex items-center gap-2 px-3 py-2 bg-purple-100 text-purple-800 hover:bg-purple-200 rounded-lg text-sm font-medium transition-colors"
+                title="Debug connection info"
+              >
+                🔍 Debug
               </button>
               
               <button

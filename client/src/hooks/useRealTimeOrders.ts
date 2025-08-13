@@ -32,30 +32,6 @@ export const useRealTimeOrders = ({
   const audioInitialized = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
 
-  // Function to initialize audio with user interaction
-  const initializeAudio = useCallback(async () => {
-    try {
-      // Initialize Web Audio API context
-      if (!audioContextRef.current) {
-        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-      }
-      
-      // Resume audio context if suspended
-      if (audioContextRef.current.state === 'suspended') {
-        await audioContextRef.current.resume();
-      }
-      
-      audioInitialized.current = true;
-      console.log('✅ Audio context initialized successfully');
-      
-      // Test the beep sound
-      playBeep();
-      
-    } catch (error) {
-      console.log('❌ Audio initialization failed:', error);
-    }
-  }, []);
-
   // Beep sound using Web Audio API
   const playBeep = useCallback(() => {
     try {
@@ -115,12 +91,40 @@ export const useRealTimeOrders = ({
     }
   }, []);
 
+  // Function to initialize audio with user interaction
+  const initializeAudio = useCallback(async () => {
+    try {
+      // Initialize Web Audio API context
+      if (!audioContextRef.current) {
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      }
+      
+      // Resume audio context if suspended
+      if (audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume();
+      }
+      
+      audioInitialized.current = true;
+      console.log('✅ Audio context initialized successfully');
+      
+      // Test the beep sound
+      playBeep();
+      
+    } catch (error) {
+      console.log('❌ Audio initialization failed:', error);
+    }
+  }, [playBeep]);
+
   // Join restaurant room when connected
   useEffect(() => {
     if (isConnected && restaurantId) {
+      console.log('🔗 Joining restaurant room:', restaurantId);
       joinRestaurant(restaurantId);
       // Also join kitchen room for kitchen staff
+      console.log('🔗 Joining kitchen room:', restaurantId);
       joinKitchen(restaurantId);
+    } else {
+      console.log('❌ Cannot join rooms - Connected:', isConnected, 'RestaurantId:', restaurantId);
     }
   }, [isConnected, restaurantId, joinRestaurant, joinKitchen]);
 
@@ -160,7 +164,7 @@ export const useRealTimeOrders = ({
     setTimeout(() => {
       processedOrders.current.delete(orderData.orderId);
     }, 60000); // 1 minute
-  }, [onNewOrder]);
+  }, [onNewOrder, enableSound, initializeAudio, playBeep]);
 
   // Handle order status updates
   const handleOrderStatusUpdate = useCallback((orderData: Order) => {
@@ -171,16 +175,24 @@ export const useRealTimeOrders = ({
 
   // Set up socket event listeners
   useEffect(() => {
-    if (!socket || !isConnected) return;
+    if (!socket || !isConnected) {
+      console.log('❌ Cannot set up socket listeners - Socket:', !!socket, 'Connected:', isConnected);
+      return;
+    }
 
+    console.log('🎧 Setting up socket event listeners');
+    
     // Listen for new orders
     socket.on('newOrderReceived', handleNewOrder);
+    console.log('✅ Listening for newOrderReceived events');
     
     // Listen for order status updates
     socket.on('orderStatusUpdated', handleOrderStatusUpdate);
+    console.log('✅ Listening for orderStatusUpdated events');
 
     // Cleanup event listeners
     return () => {
+      console.log('🧹 Cleaning up socket event listeners');
       socket.off('newOrderReceived', handleNewOrder);
       socket.off('orderStatusUpdated', handleOrderStatusUpdate);
     };
