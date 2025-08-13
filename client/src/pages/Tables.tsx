@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../AuthContext.tsx';
-import { Plus, QrCode, Users, Printer, Download, Edit, Trash2, Settings, DollarSign, CheckCircle, Calendar, ChevronDown } from 'lucide-react';
+import { Plus, QrCode, Users, Printer, Download, Edit, Trash2, Settings, CheckCircle, Calendar, ChevronDown } from 'lucide-react';
 import apiClient from '../utils/apiClient.ts';
 import TableOrderModal from '../components/table/TableOrderModal.tsx';
 import TableQRModal from '../components/table/TableQRModal.tsx';
@@ -370,94 +370,104 @@ const Tables: React.FC = () => {
         </div>
       </div>
 
-      {/* Table Grid */}
-      <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+             {/* Table Grid */}
+       <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
           {tables.map((table) => (
-            <div
-              key={table._id}
-              onClick={() => handleTableClick(table)}
-              className={`
-                relative p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:shadow-md
-                ${getStatusColor(table.status)}
-                ${table.currentOrder ? 'ring-2 ring-blue-500' : ''}
-              `}
-            >
-              {/* Table Number */}
-              <div className="text-center mb-2">
-                <div className="text-2xl font-bold text-gray-800">Table {table.tableNumber}</div>
-                <div className="text-xs text-gray-600 mt-1">{getStatusText(table.status)}</div>
-              </div>
+                         <div
+               key={table._id}
+               onClick={() => handleTableClick(table)}
+                                className={`
+                   relative p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 hover:shadow-lg
+                   flex flex-col items-center justify-center min-h-[140px] text-center
+                   ${getStatusColor(table.status)}
+                   ${table.currentOrder ? 'ring-2 ring-blue-500' : ''}
+                   hover:scale-[1.02] hover:border-opacity-80
+                 `}
+             >
+                                            {/* Table Number */}
+               <div className="text-center mb-2">
+                 <div className="text-2xl font-bold text-gray-800 mb-1">Table {table.tableNumber}</div>
+                 <div className="text-xs text-gray-600">{getStatusText(table.status)}</div>
+               </div>
 
-              {/* Period Revenue */}
-              {table.dailyRevenue && table.dailyRevenue > 0 && (
-                <div className="text-center mb-2">
-                  <div className="flex items-center justify-center gap-1 text-sm font-semibold text-green-600">
-                    <DollarSign className="w-3 h-3" />
-                    <span>₹{table.dailyRevenue.toFixed(2)}</span>
-                  </div>
-                  <div className="text-xs text-gray-500">{dateRange.label}</div>
-                </div>
-              )}
+               {/* Period Revenue */}
+               {table.dailyRevenue && table.dailyRevenue > 0 && (
+                 <div className="text-center mb-2">
+                   <div className="text-base font-bold text-green-600 mb-1">
+                     ₹{table.dailyRevenue.toFixed(2)}
+                   </div>
+                   <div className="text-xs text-gray-500">{dateRange.label}</div>
+                 </div>
+               )}
 
-              {/* Customer Info */}
-              {table.customerName && (
-                <div className="text-center mb-2">
-                  <div className="text-sm font-medium text-gray-700">{table.customerName}</div>
-                  {table.customerMobile && (
-                    <div className="text-xs text-gray-600">{table.customerMobile}</div>
-                  )}
-                </div>
-              )}
+               {/* Customer Info */}
+               {table.customerName && (
+                 <div className="text-center mb-2">
+                   <div className="text-sm font-medium text-gray-700 mb-1">{table.customerName}</div>
+                   {table.customerMobile && (
+                     <div className="text-xs text-gray-600">{table.customerMobile}</div>
+                   )}
+                 </div>
+               )}
 
-              {/* Order Info */}
-              {table.currentOrder && (
-                <div className="text-center mb-2">
-                  <div className="text-sm font-semibold text-blue-700">
-                    Bill #{table.currentOrder.billNumber}
-                  </div>
-                  <div className="text-xs text-gray-600">
-                    ₹{table.currentOrder.totalAmount?.toLocaleString('en-IN')}
-                  </div>
-                </div>
-              )}
+               {/* Order Info */}
+               {table.currentOrder && (
+                 <div className="text-center mb-2">
+                   <div className="text-xs font-semibold text-blue-700 mb-1">
+                     Bill #{table.currentOrder.billNumber}
+                   </div>
+                   <div className="text-base font-bold text-gray-800">
+                     ₹{table.currentOrder.totalAmount?.toLocaleString('en-IN')}
+                   </div>
+                 </div>
+               )}
 
-              {/* GST Info */}
-              {table.gstEnabled && (
-                <div className="text-center mb-2">
-                  <div className="text-xs text-purple-600 font-medium">
-                    GST {table.gstPercentage}%
-                  </div>
-                </div>
-              )}
+               {/* GST Info */}
+               {table.gstEnabled && (
+                 <div className="text-center mb-2">
+                   <div className="text-xs font-medium text-purple-600">
+                     GST {table.gstPercentage}%
+                   </div>
+                 </div>
+               )}
 
-              {/* Action Buttons */}
-              <div className="absolute top-2 right-2 flex gap-1">
-                {/* QR Code Button */}
-                <button
-                  onClick={(e) => handleQRClick(e, table)}
-                  className="p-1 bg-white rounded-full shadow-sm hover:bg-gray-50 transition-colors"
-                  title="Download QR Code"
-                >
-                  <QrCode className="w-3 h-3 text-gray-600" />
-                </button>
+               {/* Revenue Display for Blank Tables */}
+               {(!table.dailyRevenue || table.dailyRevenue === 0) && (
+                 <div className="text-center mb-2">
+                   <div className="text-base font-bold text-gray-600">₹0</div>
+                 </div>
+               )}
 
-                {/* Complete Order Button (only for running tables) */}
-                {table.status === 'running' && (
-                  <button
-                    onClick={(e) => handleCompleteOrder(e, table)}
-                    className="p-1 bg-green-500 rounded-full shadow-sm hover:bg-green-600 transition-colors"
-                    title="Complete Order"
-                  >
-                    <CheckCircle className="w-3 h-3 text-white" />
-                  </button>
-                )}
-              </div>
 
-              {/* Status Indicator */}
-              <div className="absolute bottom-2 left-2">
-                <div className={`w-3 h-3 rounded-full ${getStatusColor(table.status).replace('bg-', 'bg-').replace('border-', '')}`}></div>
-              </div>
+
+                              {/* Action Buttons */}
+               <div className="absolute top-2 right-2 flex gap-1">
+                 {/* QR Code Button */}
+                 <button
+                   onClick={(e) => handleQRClick(e, table)}
+                   className="p-1.5 bg-white rounded-full shadow-sm hover:bg-gray-50 transition-all duration-200 hover:scale-110"
+                   title="Download QR Code"
+                 >
+                   <QrCode className="w-3.5 h-3.5 text-gray-600" />
+                 </button>
+
+                 {/* Complete Order Button (only for running tables) */}
+                 {table.status === 'running' && (
+                   <button
+                     onClick={(e) => handleCompleteOrder(e, table)}
+                     className="p-1.5 bg-green-500 rounded-full shadow-sm hover:bg-green-600 transition-all duration-200 hover:scale-110"
+                     title="Complete Order"
+                   >
+                     <CheckCircle className="w-3.5 h-3.5 text-white" />
+                   </button>
+                 )}
+               </div>
+
+                             {/* Status Indicator */}
+               <div className="absolute bottom-2 left-2">
+                 <div className={`w-3 h-3 rounded-full border-2 border-white shadow-sm ${getStatusColor(table.status).replace('bg-', 'bg-').replace('border-', '')}`}></div>
+               </div>
             </div>
           ))}
         </div>

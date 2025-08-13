@@ -80,20 +80,20 @@ exports.createOrder = async (req, res) => {
     });
     // Emit socket.io event for real-time updates
     if (req.io) {
-      req.io.to(`restaurant_${req.restaurantId}`).emit('newOrderReceived', {
+      const orderData = {
         orderId: order._id,
         restaurantId: req.restaurantId,
         tableId: order.tableId,
+        tableNumber: order.tableId?.tableNumber || order.tableId,
+        items: order.items,
+        totalAmount: order.totalAmount,
         status: order.status,
-        timestamp: order.timestamp
-      });
-      req.io.to(`kitchen_${req.restaurantId}`).emit('newOrderReceived', {
-        orderId: order._id,
-        restaurantId: req.restaurantId,
-        tableId: order.tableId,
-        status: order.status,
-        timestamp: order.timestamp
-      });
+        timestamp: order.timestamp,
+        billNumber: order.billNumber || null
+      };
+      
+      req.io.to(`restaurant_${req.restaurantId}`).emit('newOrderReceived', orderData);
+      req.io.to(`kitchen_${req.restaurantId}`).emit('newOrderReceived', orderData);
     }
     res.status(201).json(order);
   } catch (err) {
@@ -109,18 +109,20 @@ exports.updateOrderStatus = async (req, res, next) => {
     if (!order) return res.status(404).json({ error: 'Order not found' });
     // Emit socket.io event for real-time updates
     if (req.io) {
-      req.io.to(`restaurant_${req.restaurantId}`).emit('orderStatusUpdated', {
+      const orderData = {
         orderId: order._id,
         restaurantId: req.restaurantId,
+        tableId: order.tableId,
+        tableNumber: order.tableId?.tableNumber || order.tableId,
+        items: order.items,
+        totalAmount: order.totalAmount,
         status: order.status,
-        timestamp: new Date()
-      });
-      req.io.to(`kitchen_${req.restaurantId}`).emit('orderStatusUpdated', {
-        orderId: order._id,
-        restaurantId: req.restaurantId,
-        status: order.status,
-        timestamp: new Date()
-      });
+        timestamp: new Date(),
+        billNumber: order.billNumber || null
+      };
+      
+      req.io.to(`restaurant_${req.restaurantId}`).emit('orderStatusUpdated', orderData);
+      req.io.to(`kitchen_${req.restaurantId}`).emit('orderStatusUpdated', orderData);
     }
     res.json(order);
   } catch (err) {
@@ -222,9 +224,23 @@ exports.createOrderPublic = async (req, res) => {
       status: 'pending', 
       timestamp: new Date() 
     });
-    // Emit socket.io event to restaurantId room
-    const io = req.app.get('io');
-    if (io) io.to(String(restaurantId)).emit('orderCreated', order);
+    // Emit socket.io event for real-time updates
+    if (req.io) {
+      const orderData = {
+        orderId: order._id,
+        restaurantId: restaurantId,
+        tableId: order.tableId,
+        tableNumber: order.tableId?.tableNumber || order.tableId,
+        items: order.items,
+        totalAmount: order.totalAmount,
+        status: order.status,
+        timestamp: order.timestamp,
+        billNumber: order.billNumber || null
+      };
+      
+      req.io.to(`restaurant_${restaurantId}`).emit('newOrderReceived', orderData);
+      req.io.to(`kitchen_${restaurantId}`).emit('newOrderReceived', orderData);
+    }
     console.log('Order created with _id:', order._id);
     res.status(201).json(order);
   } catch (err) {
@@ -280,9 +296,23 @@ exports.createOrderPublicWithId = async (req, res) => {
     const order = await Order.create(orderData);
     console.log('Order created with _id:', order._id);
     
-    // Emit socket.io event to restaurantId room
-    const io = req.app.get('io');
-    if (io) io.to(String(restaurantId)).emit('orderCreated', order);
+    // Emit socket.io event for real-time updates
+    if (req.io) {
+      const orderData = {
+        orderId: order._id,
+        restaurantId: restaurantId,
+        tableId: order.tableId,
+        tableNumber: order.tableId?.tableNumber || order.tableId,
+        items: order.items,
+        totalAmount: order.totalAmount,
+        status: order.status,
+        timestamp: order.timestamp,
+        billNumber: order.billNumber || null
+      };
+      
+      req.io.to(`restaurant_${restaurantId}`).emit('newOrderReceived', orderData);
+      req.io.to(`kitchen_${restaurantId}`).emit('newOrderReceived', orderData);
+    }
     res.status(201).json(order);
   } catch (err) {
     console.error('Error in createOrderPublicWithId:', err);

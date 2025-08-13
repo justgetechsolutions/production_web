@@ -11,7 +11,8 @@ import {
   Bell,
   ChevronDown
 } from 'react-feather';
-import { io, Socket } from 'socket.io-client';
+import { useRealTimeOrders } from '../hooks/useRealTimeOrders';
+import NewOrderNotification from '../components/NewOrderNotification';
 
 interface OrderItem {
   menuItem: {
@@ -55,9 +56,11 @@ const KitchenDashboard: React.FC = () => {
   const [stats, setStats] = useState<KitchenStats>({ pending: 0, preparing: 0, ready: 0, served: 0, completed: 0, todayOrders: 0 });
   const [loading, setLoading] = useState(true);
   const [staffInfo, setStaffInfo] = useState<any>(null);
-  const [socket, setSocket] = useState<Socket | null>(null);
   const [newOrderNotification, setNewOrderNotification] = useState(false);
   const [statusDropdowns, setStatusDropdowns] = useState<{ [key: string]: boolean }>({});
+  const [showNewOrderNotification, setShowNewOrderNotification] = useState(false);
+  const [newOrderData, setNewOrderData] = useState<any>(null);
+  const [enableSound, setEnableSound] = useState(true);
   const navigate = useNavigate();
   const audioRef = useRef<HTMLAudioElement>(null);
 
@@ -84,27 +87,27 @@ const KitchenDashboard: React.FC = () => {
       return;
     }
 
-    setStaffInfo(JSON.parse(staffData));
-    fetchOrders();
-    fetchStats();
-    setupSocket();
+    try {
+      const parsedStaffInfo = JSON.parse(staffData);
+      console.log('Kitchen dashboard: Parsed staff info:', parsedStaffInfo);
+      setStaffInfo(parsedStaffInfo);
+      fetchOrders();
+      fetchStats();
+    } catch (error) {
+      console.error('Error parsing staff data:', error);
+      navigate('/kitchen-login');
+    }
   }, [navigate]);
 
-  const setupSocket = () => {
-    const raw = document.cookie.includes('kitchenStaff') ? decodeURIComponent((document.cookie.split('; ').find(row => row.startsWith('kitchenStaff=')) || '').split('=')[1] || '{}') : '{}';
-    const staffData = JSON.parse(raw || '{}');
-    const newSocket = io(import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com');
-    
-    newSocket.on('connect', () => {
-      console.log('Connected to kitchen socket');
-      if (staffData.restaurantId) {
-        newSocket.emit('joinKitchen', staffData.restaurantId);
-        console.log('Joined kitchen room for restaurant:', staffData.restaurantId);
-      }
-    });
-
-    newSocket.on('newOrderReceived', (data) => {
-      console.log('New order received:', data);
+  // Real-time order updates for kitchen - only when staffInfo is available
+  const { isConnected, initializeAudio } = useRealTimeOrders({
+    restaurantId: staffInfo?.restaurantId || '',
+    enableSound: enableSound,
+    onNewOrder: (orderData) => {
+      console.log('New order received in kitchen:', orderData);
+      // Show notification
+      setNewOrderData(orderData);
+      setShowNewOrderNotification(true);
       setNewOrderNotification(true);
       if (audioRef.current) {
         audioRef.current.play().catch(console.error);
@@ -113,28 +116,30 @@ const KitchenDashboard: React.FC = () => {
       setTimeout(() => setNewOrderNotification(false), 5000);
       fetchOrders(); // Refresh orders
       fetchStats(); // Refresh stats
-    });
-
-    newSocket.on('orderStatusUpdated', (data) => {
-      console.log('Order status updated:', data);
+    },
+    onOrderStatusUpdate: (orderData) => {
+      console.log('Order status updated in kitchen:', orderData);
       fetchOrders(); // Refresh orders
       fetchStats(); // Refresh stats
-    });
+    }
+  });
 
-    newSocket.on('disconnect', () => {
-      console.log('Kitchen socket disconnected');
-    });
+  // Debug: Log when useRealTimeOrders is called
+  console.log('Kitchen dashboard: useRealTimeOrders called with restaurantId:', staffInfo?.restaurantId);
 
-    newSocket.on('connect_error', (error) => {
-      console.error('Kitchen socket connection error:', error);
-    });
+  // Debug: Log when restaurantId changes
+  useEffect(() => {
+    if (staffInfo?.restaurantId) {
+      console.log('Kitchen dashboard: Restaurant ID available:', staffInfo.restaurantId);
+    }
+  }, [staffInfo?.restaurantId]);
 
-    setSocket(newSocket);
+  // Debug: Log socket connection status
+  useEffect(() => {
+    console.log('Kitchen dashboard: Socket connection status:', isConnected);
+  }, [isConnected]);
 
-    return () => {
-      newSocket.disconnect();
-    };
-  };
+
 
   const fetchOrders = async () => {
     try {
@@ -199,9 +204,6 @@ const KitchenDashboard: React.FC = () => {
 
   const handleLogout = () => {
     document.cookie = 'kitchenStaff=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/';
-    if (socket) {
-      socket.disconnect();
-    }
     navigate('/kitchen-login');
   };
 
@@ -277,7 +279,15 @@ const KitchenDashboard: React.FC = () => {
                 <Users size={24} className="text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Kitchen Dashboard</h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-xl font-bold text-gray-900">Kitchen Dashboard</h1>
+                  {showNewOrderNotification && (
+                    <div className="flex items-center gap-2 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium animate-pulse">
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
+                      New Order!
+                    </div>
+                  )}
+                </div>
                 <p className="text-sm text-gray-500">
                   Welcome back, {staffInfo?.name}
                 </p>
@@ -285,6 +295,37 @@ const KitchenDashboard: React.FC = () => {
             </div>
             
             <div className="flex items-center space-x-4">
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${
+                isConnected 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                <div className={`w-2 h-2 rounded-full ${
+                  isConnected ? 'bg-green-500' : 'bg-red-500'
+                }`}></div>
+                {isConnected ? 'Connected' : 'Disconnected'}
+              </div>
+              
+              <button
+                onClick={() => setEnableSound(!enableSound)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  enableSound 
+                    ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+                title={enableSound ? 'Disable sound notifications' : 'Enable sound notifications'}
+              >
+                <div className={`w-2 h-2 rounded-full ${enableSound ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                {enableSound ? 'Sound ON' : 'Sound OFF'}
+              </button>
+              <button
+                onClick={initializeAudio}
+                className="flex items-center gap-2 px-3 py-2 bg-blue-100 text-blue-800 hover:bg-blue-200 rounded-lg text-sm font-medium transition-colors"
+                title="Test notification sound (unlocks audio)"
+              >
+                🔊 Test Sound
+              </button>
+              
               <button
                 onClick={fetchOrders}
                 className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
@@ -492,6 +533,13 @@ const KitchenDashboard: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* New Order Notification */}
+      <NewOrderNotification
+        isVisible={showNewOrderNotification}
+        onClose={() => setShowNewOrderNotification(false)}
+        orderData={newOrderData}
+      />
     </div>
   );
 };

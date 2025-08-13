@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../../AuthContext.tsx';
-import { io, Socket } from 'socket.io-client';
 import { Printer, Download, RefreshCw, Filter, Users, Calendar, ChevronDown } from 'lucide-react';
 import apiClient from '../../utils/apiClient.ts';
 import BillReceipt from '../table/BillReceipt.tsx';
 import dayjs from 'dayjs';
+import { useRealTimeOrders } from '../../hooks/useRealTimeOrders';
+import NewOrderNotification from '../NewOrderNotification.tsx';
 
 interface Order {
   _id?: string;
@@ -56,6 +57,9 @@ function OrderList() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
+  const [showNewOrderNotification, setShowNewOrderNotification] = useState(false);
+  const [newOrderData, setNewOrderData] = useState<any>(null);
+  const [enableSound, setEnableSound] = useState(true);
 
   // Predefined date ranges
   const dateRanges: DateRange[] = [
@@ -330,64 +334,65 @@ function OrderList() {
 
   const uniqueTables = Array.from(new Set(orders.map(order => order.tableNumber).filter(Boolean)));
 
+  // Real-time order updates
+  const { isConnected, initializeAudio } = useRealTimeOrders({
+    restaurantId: restaurantId || '',
+    enableSound: enableSound,
+    onNewOrder: (orderData) => {
+      console.log('New order received:', orderData);
+      // Show notification
+      setNewOrderData(orderData);
+      setShowNewOrderNotification(true);
+      // Add new order to the list
+      const newOrder: Order = {
+        _id: orderData.orderId,
+        tableId: orderData.tableId,
+        tableNumber: orderData.tableNumber,
+        token: orderData.billNumber,
+        billNumber: orderData.billNumber,
+        items: orderData.items || [],
+        status: orderData.status,
+        timestamp: orderData.timestamp,
+        totalAmount: orderData.totalAmount
+      };
+      
+      setOrders(prev => [newOrder, ...prev]);
+      
+      // Highlight the new order
+      highlightNewOrder(orderData.orderId);
+      
+      // Refresh to get complete order data
+      fetchOrders(false, false);
+    },
+    onOrderStatusUpdate: (orderData) => {
+      console.log('Order status updated:', orderData);
+      setOrders(prev => {
+        const updated = prev.map(o => o._id === orderData.orderId ? { ...o, status: orderData.status } : o);
+        // keep table stats in sync without full refetch
+        calculateTableStats(updated);
+        return updated;
+      });
+    }
+  });
+
+  // Highlight new order with visual effect
+  const highlightNewOrder = (orderId: string) => {
+    const orderElement = document.getElementById(`order-${orderId}`);
+    if (orderElement) {
+      orderElement.classList.add('bg-yellow-100', 'border-yellow-400');
+      setTimeout(() => {
+        orderElement.classList.remove('bg-yellow-100', 'border-yellow-400');
+      }, 5000); // Remove highlight after 5 seconds
+    }
+  };
+
   useEffect(() => {
     fetchTables();
     fetchOrders(false, true);
     const interval = setInterval(() => fetchOrders(), 10000);
 
-    let socket: Socket | null = null;
-    if (restaurantId) {
-      socket = io(import.meta.env.VITE_API_BASE_URL || 'https://production-web-l3pb.onrender.com', {
-        withCredentials: true,
-        transports: ['websocket', 'polling']
-      });
-      
-      socket.on('connect', () => {
-        console.log('Admin panel connected to socket');
-        if (socket) {
-          socket.emit('joinRestaurant', restaurantId);
-          console.log('Admin panel joined restaurant room:', restaurantId);
-        }
-      });
-
-      socket.on('newOrderReceived', (data) => {
-        console.log('New order received in admin panel:', data);
-        fetchOrders(true);
-      });
-      
-      // Realtime status updates from kitchen and other admins
-      socket.on('orderStatusUpdated', (data: { orderId: string; status: string }) => {
-        console.log('Order status updated in admin panel:', data);
-        setOrders(prev => {
-          const updated = prev.map(o => o._id === data.orderId ? { ...o, status: data.status } : o);
-          // keep table stats in sync without full refetch
-          calculateTableStats(updated);
-          return updated;
-        });
-      });
-
-      // Some endpoints emit 'orderReady' specifically
-      socket.on('orderReady', (data: { orderId: string }) => {
-        setOrders(prev => {
-          const updated = prev.map(o => o._id === data.orderId ? { ...o, status: 'ready' } : o);
-          calculateTableStats(updated);
-          return updated;
-        });
-      });
-
-      socket.on('disconnect', () => {
-        console.log('Admin panel socket disconnected');
-      });
-
-      socket.on('connect_error', (error) => {
-        console.error('Admin panel socket connection error:', error);
-      });
-    }
     return () => {
       clearInterval(interval);
-      if (socket) {
-        socket.disconnect();
-      }
     };
   }, [restaurantId, dateRange]);
 
@@ -422,10 +427,49 @@ function OrderList() {
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-2xl font-bold text-gray-900">Orders Management</h2>
-          <span className="inline-block bg-yellow-100 text-yellow-800 font-bold px-4 py-2 rounded-lg text-lg">
-            Pending Orders: {pendingCount}
-          </span>
+          <div className="flex items-center gap-3">
+            <h2 className="text-2xl font-bold text-gray-900">Orders Management</h2>
+            {showNewOrderNotification && (
+              <div className="flex items-center gap-2 px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm font-medium animate-pulse">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-ping"></div>
+                New Order!
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium ${
+              isConnected 
+                ? 'bg-green-100 text-green-800' 
+                : 'bg-red-100 text-red-800'
+            }`}>
+              <div className={`w-2 h-2 rounded-full ${
+                isConnected ? 'bg-green-500' : 'bg-red-500'
+              }`}></div>
+              {isConnected ? 'Real-time Connected' : 'Real-time Disconnected'}
+            </div>
+            <span className="inline-block bg-yellow-100 text-yellow-800 font-bold px-4 py-2 rounded-lg text-lg">
+              Pending Orders: {pendingCount}
+            </span>
+                         <button
+               onClick={() => setEnableSound(!enableSound)}
+               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                 enableSound 
+                   ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+               }`}
+               title={enableSound ? 'Disable sound notifications' : 'Enable sound notifications'}
+             >
+               <div className={`w-2 h-2 rounded-full ${enableSound ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+               {enableSound ? 'Sound ON' : 'Sound OFF'}
+             </button>
+                           <button
+                onClick={initializeAudio}
+                className="flex items-center gap-2 px-3 py-2 bg-blue-100 text-blue-800 hover:bg-blue-200 rounded-lg text-sm font-medium transition-colors"
+                title="Test notification sound (unlocks audio)"
+              >
+                🔊 Test Sound
+              </button>
+          </div>
         </div>
 
         {/* Dynamic Table Slider */}
@@ -654,7 +698,11 @@ function OrderList() {
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredOrders.map(order => (
-              <tr key={order._id} className="hover:bg-gray-50">
+              <tr 
+                key={order._id} 
+                id={`order-${order._id}`}
+                className="hover:bg-gray-50 transition-all duration-300"
+              >
                 <td className="px-6 py-4">
                   <div className="text-center">
                     <div className="font-bold text-2xl text-red-600">#{order.token || 'N/A'}</div>
@@ -811,6 +859,13 @@ function OrderList() {
           }}
         />
       )}
+
+      {/* New Order Notification */}
+      <NewOrderNotification
+        isVisible={showNewOrderNotification}
+        onClose={() => setShowNewOrderNotification(false)}
+        orderData={newOrderData}
+      />
     </div>
   );
 }

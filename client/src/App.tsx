@@ -1,4 +1,5 @@
 import { AuthProvider, useAuth } from './AuthContext.tsx';
+import { SocketProvider } from './contexts/SocketContext';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import MainLayout from './layout/MainLayout.tsx';
 import Dashboard from './pages/Dashboard.tsx';
@@ -81,10 +82,12 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <AppRoutes />
-        <ToastContainer position="top-right" autoClose={3000} hideProgressBar newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover aria-label="Notification" />
-      </Router>
+      <SocketProvider>
+        <Router>
+          <AppRoutes />
+          <ToastContainer position="top-right" autoClose={3000} hideProgressBar newestOnTop closeOnClick pauseOnFocusLoss draggable pauseOnHover aria-label="Notification" />
+        </Router>
+      </SocketProvider>
     </AuthProvider>
   );
 }
