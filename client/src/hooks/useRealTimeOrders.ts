@@ -28,56 +28,9 @@ export const useRealTimeOrders = ({
   enableSound = true
 }: UseRealTimeOrdersProps) => {
   const { socket, isConnected, joinRestaurant, joinKitchen } = useSocket();
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const processedOrders = useRef<Set<string>>(new Set());
   const audioInitialized = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
-
-  // Initialize audio element
-  useEffect(() => {
-    // Try multiple possible paths for the audio file
-    const audioPaths = [
-      '/notification.mp3',
-      '/public/notification.mp3',
-      './notification.mp3',
-      `${window.location.origin}/notification.mp3`
-    ];
-    
-    let audioLoaded = false;
-    
-    for (const path of audioPaths) {
-      try {
-        const audio = new Audio(path);
-        audio.volume = 0.5;
-        audio.preload = 'auto';
-        
-        audio.addEventListener('canplaythrough', () => {
-          console.log('✅ Audio file loaded successfully from:', path);
-          audioRef.current = audio;
-          audioLoaded = true;
-        });
-        
-        audio.addEventListener('error', (e) => {
-          console.log(`❌ Audio file failed to load from ${path}:`, e);
-          if (!audioLoaded) {
-            // Try next path
-            audio.load();
-          }
-        });
-        
-        audio.load();
-        
-        // If this path works, break the loop
-        if (audioLoaded) break;
-        
-      } catch (error) {
-        console.log(`Failed to create audio from ${path}:`, error);
-      }
-    }
-    
-    // Log audio status for debugging
-    console.log('Audio element initialization attempted');
-  }, []);
 
   // Function to initialize audio with user interaction
   const initializeAudio = useCallback(async () => {
